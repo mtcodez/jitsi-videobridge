@@ -90,6 +90,8 @@ public class VideobridgeStatistics
      */
     public static final String RTP_LOSS = "rtp_loss";
 
+    public static final String AVG_UPLOAD_JITTER = "avg_upload_jitter";
+    public static final String AVG_DOWNLOAD_JITTER = "avg_download_jitter";
     /**
      * The name of the stat that indicates the bridge has entered graceful
      * shutdown mode. Its runtime type is {@code Boolean}.
@@ -182,7 +184,8 @@ public class VideobridgeStatistics
         unlockedSetStat(USED_MEMORY, 0);
         unlockedSetStat(VIDEOCHANNELS, 0);
         unlockedSetStat(VIDEOSTREAMS, 0);
-
+        unlockedSetStat(AVG_UPLOAD_JITTER, decimalFormat.format(0.0d));
+        unlockedSetStat(AVG_DOWNLOAD_JITTER, decimalFormat.format(0.0d));
         unlockedSetStat(TIMESTAMP, currentTimeMillis());
     }
 
@@ -249,6 +252,8 @@ public class VideobridgeStatistics
         int videoStreams = 0;
         long packets = 0, packetsLost = 0;
         long bytesReceived = 0, bytesSent = 0;
+        double avgUploadJitter = 0;
+        double avgDownloadJitter = 0;
         boolean shutdownInProgress = false;
 
         BundleContext bundleContext
@@ -271,6 +276,8 @@ public class VideobridgeStatistics
                         else if(MediaType.VIDEO.equals(mediaType))
                             videoChannels += content.getChannelCount();
 
+                        double totalDJitter = 0;
+                        double totalUJitter = 0;
                         for(Channel channel : content.getChannels())
                         {
                             if(channel instanceof RtpChannel)
@@ -301,8 +308,13 @@ public class VideobridgeStatistics
 
                                     videoStreams += channelStreams;
                                 }
+
+                                totalUJitter += rtpChannel.getAverageUploadJitter();
+                                totalDJitter += rtpChannel.getAverageDownloadJitter();
                             }
                         }
+                        avgUploadJitter = totalUJitter / content.getChannels().length;
+                        avgDownloadJitter = totalDJitter / content.getChannels().length;
                     }
                     conferences++;
                     endpoints += conference.getEndpointCount();
@@ -334,6 +346,8 @@ public class VideobridgeStatistics
 
         // TIMESTAMP
         String timestamp = currentTimeMillis();
+
+        // AVG JITTER
 
         // Now that (the new values of) the statistics have been calculated and
         // the risks of the current thread hanging have been reduced as much as
@@ -385,6 +399,8 @@ public class VideobridgeStatistics
 
             unlockedSetStat(SHUTDOWN_IN_PROGRESS, shutdownInProgress);
 
+            unlockedSetStat(AVG_UPLOAD_JITTER, avgUploadJitter);
+            unlockedSetStat(AVG_DOWNLOAD_JITTER, avgDownloadJitter);
             unlockedSetStat(TIMESTAMP, timestamp);
         }
         finally

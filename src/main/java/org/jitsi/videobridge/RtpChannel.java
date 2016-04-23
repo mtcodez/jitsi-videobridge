@@ -989,6 +989,24 @@ public class RtpChannel
         return rtpLevelRelayType;
     }
 
+    public double getAverageDownloadJitter() {
+        MediaStream stream = this.stream;
+
+        if (stream == null)
+            return 0;
+
+        return stream.getMediaStreamStats().getAvgDownloadJitterMs();
+    }
+
+    public double getAverageUploadJitter() {
+        MediaStream stream = this.stream;
+
+        if (stream == null)
+            return 0;
+
+        return stream.getMediaStreamStats().getAvgUploadJitterMs();
+    }
+
     /**
      * Returns the <tt>MediaStream</tt> which this <tt>Channel</tt> adapts to
      * the terms of Jitsi Videobridge and which adapts this <tt>Channel</tt>
